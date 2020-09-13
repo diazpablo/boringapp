@@ -1,29 +1,50 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Table from "./common/table";
+import Like from "./common/like";
+import styled, { css } from "styled-components";
 
-const ActivitiesTable = ({ activities, sortColumn, onSort }) => {
+const imageCellStyles = css`
+	width: 15%;
+	max-height: 80px;
+	padding: 0;
+`;
+const activityCellStyles = css`
+	width: 30%;
+`;
+
+const ActivityImage = styled.img`
+	display: block;
+	object-fit: cover;
+	object-position: center;
+	max-width: 100%;
+	max-height: 100%;
+`
+
+const ActivitiesTable = (props) => {
+	const {
+		activities, sortColumn, onSort, onLike,
+		totalCount, pageNumber, pageSize, setPageNumber, setPageSize
+	} = props;
+
 	const columns = [
-		{ key: 'activity', label: 'Activity name' },
+		{
+			key: 'imageUrl',
+			contentCellStyles: imageCellStyles,
+			content: activity => (
+				<ActivityImage
+					alt={activity.activity}
+					src={activity.imageUrl}
+				/>
+			)
+		},
+		{ key: 'activity', label: 'Activity name', contentCellStyles: activityCellStyles },
 		{ key: 'accessibility', label: 'Accessibility' },
 		{ key: 'type', label: 'Type' },
 		{ key: 'participants', label: 'Participants' },
 		{ key: 'price', label: 'Price' },
-		{
-			key: 'imageUrl', label: null, content: activity => (
-				<img
-					alt={activity.activity}
-					style={{
-						objectFit: 'cover',
-						objectPosition: 'center',
-						maxWidth: '100%',
-						maxHeight: '100%',
-					}}
-					src={activity.imageUrl} />
-			)
-		}
+		{ key: 'like', content: activity => <Like liked={activity.liked} onClick={() => onLike(activity)} /> }
 	];
-	console.log("activitiesTable", activities);
 
 	return (
 		<Table
@@ -31,6 +52,13 @@ const ActivitiesTable = ({ activities, sortColumn, onSort }) => {
 			columns={columns}
 			sortColumn={sortColumn}
 			onSort={onSort}
+			pagination={{
+				totalCount,
+				pageNumber,
+				pageSize,
+				setPageNumber,
+				setPageSize,
+			}}
 		/>
 	);
 };
@@ -38,7 +66,13 @@ const ActivitiesTable = ({ activities, sortColumn, onSort }) => {
 ActivitiesTable.propTypes = {
 	activities: PropTypes.array.isRequired,
 	sortColumn: PropTypes.object.isRequired,
-	onSort: PropTypes.func.isRequired
+	onSort: PropTypes.func.isRequired,
+	onLike: PropTypes.func.isRequired,
+	totalCount: PropTypes.number.isRequired,
+	pageNumber: PropTypes.number.isRequired,
+	pageSize: PropTypes.number.isRequired,
+	setPageNumber: PropTypes.func.isRequired,
+	setPageSize: PropTypes.func.isRequired
 }
 
 export default ActivitiesTable;
