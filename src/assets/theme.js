@@ -9,4 +9,12 @@ export default createMuiTheme({
 			main: '#8DA9C4',
 		},
 	},
+	overrides: {
+		MuiTooltip: {
+			tooltip: {
+				fontSize: 14,
+				backgroundColor: "#8DA9C4"
+			}
+		}
+	}
 });

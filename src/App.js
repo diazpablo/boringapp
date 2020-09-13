@@ -1,155 +1,157 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ThemeProvider } from '@material-ui/styles';
-import { Container, Box, Typography } from "@material-ui/core";
-import styled from "styled-components";
 import theme from "./assets/theme";
+import styled, { css } from "styled-components";
+import activitiesService from "./services/activitiesService";
 import Header from "./components/header";
 import Search from "./components/search";
 import ActivitiesTable from "./components/activitiesTable";
+import LoadingOverlay from "./components/loadingOverlay";
+import { Container, Box, Typography, Button, Tooltip } from "@material-ui/core";
+import AddBoxIcon from '@material-ui/icons/AddBox';
+import { order, paginate, search } from "./utils/helpers";
 
-const Row = styled.div`
+// Styled Components
+const rowStyles = css`
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
+	margin: 40px 0;
+`;
+const HeadingRow = styled.div`
+	${rowStyles};
+	justify-content: space-between;
+`;
+const ButtonRow = styled.div`
+	${rowStyles};
+	justify-content: flex-end;
+	> * {
+		margin-left: 10px;
+	}
 `;
 
-const activities = [
-	{
-		"activity": "Take a hike at a local park",
-		"accessibility": 0.1,
-		"type": "recreational",
-		"participants": 1,
-		"price": 0,
-		"id": "8724324",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Make a couch fort",
-		"accessibility": 0.08,
-		"type": "recreational",
-		"participants": 1,
-		"price": 0,
-		"id": "2352669",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Start a collection",
-		"accessibility": 0.5,
-		"type": "recreational",
-		"participants": 1,
-		"price": 0,
-		"id": "1718657",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Wash your car",
-		"accessibility": 0.15,
-		"type": "busywork",
-		"participants": 1,
-		"price": 0.05,
-		"id": "1017771",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Visit a nearby museum",
-		"accessibility": 0.7,
-		"type": "recreational",
-		"participants": 1,
-		"price": 0.2,
-		"id": "5490351",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Start a daily journal",
-		"accessibility": 0,
-		"type": "relaxation",
-		"participants": 1,
-		"price": 0,
-		"id": "8779876",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Have a paper airplane contest with some friends",
-		"accessibility": 0.05,
-		"type": "social",
-		"participants": 4,
-		"price": 0.02,
-		"id": "8557562",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Volunteer and help out at a senior center",
-		"accessibility": 0.1,
-		"type": "charity",
-		"participants": 1,
-		"price": 0,
-		"id": "3920096",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Learn a new recipe",
-		"accessibility": 0.05,
-		"type": "cooking",
-		"participants": 1,
-		"price": 0,
-		"id": "6553978",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	},
-	{
-		"activity": "Go to the gym",
-		"accessibility": 0.1,
-		"type": "recreational",
-		"participants": 1,
-		"price": 0.2,
-		"id": "4387026",
-		"imageUrl": "https://source.unsplash.com/random/896x504"
-	}
+// SearchBy Options
+const searchOptions = [
+	{ key: 'activity', label: "Name" },
 ];
 
 function App() {
+	// Search State
 	const [ searchValue, setSearchValue ] = useState('');
+	// For future searchin by functionality
+	const [ searchBy ] = useState(searchOptions[0]);
+
+	// Sort State
 	const [ sortColumn, setSortColumn ] = useState({ key: 'activity', order: 'asc' });
 
+	// Entities State
+	const [ activities, setActivities ] = useState([]);
+
+	// Pagination State
+	const [ pageSize, setPageSize ] = useState(10);
+	const [ pageNumber, setPageNumber ] = useState(0);
+
+	// Loading State
+	const [ loading, setLoading ] = useState(false);
+
+	useEffect(() => {
+		fetchData(true);
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const fetchData = async (random) => {
+		setLoading(true);
+		let newActivities;
+
+		if (random) newActivities = await activitiesService.getRandomActivities(pageSize);
+		else newActivities = await activitiesService.getNewActivites(pageSize, activities);
+
+		setActivities(() => [ ...activities, ...newActivities ]);
+		setLoading(false);
+	}
+
+	// Click Handlers
+	const handleClick = () => fetchData(false);
+	const handleRandomClick = () => fetchData(true);
+
 	const handleSearch = value => {
+		setPageNumber(0);
 		setSearchValue(value);
 	}
 
-	const sortFn = {
-		'asc': (a, b) => {
-			if (a[sortColumn.key] < b[sortColumn.key]) return -1;
-			if (a[sortColumn.key] > b[sortColumn.key]) return 1;
-			return 0;
-		},
-		'desc': (a, b) => {
-			if (a[sortColumn.key] < b[sortColumn.key]) return 1;
-			if (a[sortColumn.key] > b[sortColumn.key]) return -1;
-			return 0;
-		},
+	const handleLike = async activity => {
+		const originalActivities = [ ...activities ];
+		const newActivities = [ ...activities ];
+
+		const index = newActivities.indexOf(activity);
+		const newActivity = { ...newActivities[index], liked: !activities[index].liked };
+		newActivities[index] = newActivity;
+		setActivities(newActivities);
+
+		try {
+			await activitiesService.setLikedActivity(newActivity);
+		} catch (err) {
+			// Catching errors on persisting liking or future server update
+			console.error(err);
+			alert("It was a problem, please try later.")
+			setActivities(originalActivities);
+		}
 	}
 
-	const sorted = activities.sort(sortFn[sortColumn.order]);
-	const filtered = sorted.filter(row => row.activity.toLowerCase().indexOf(searchValue.trim().toLowerCase()) > -1)
+	const sorted = order(activities, sortColumn.key, sortColumn.order);
+	const searched = search(sorted, searchBy.key, searchValue);
+	const paginated = paginate(searched, pageNumber, pageSize);
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Header />
+			<Header likedActivities={activities.filter(a => a.liked)} onUnlike={handleLike} />
 			<Container maxWidth="lg">
-				<Box my={5}>
-					<Row>
-						<Typography variant="h3" component="h1">
-							Welcome to Our Main App
-						</Typography>
-						<Search searchValue={searchValue} handleSearch={handleSearch} />
-					</Row>
-				</Box>
-				<Box mb={5}>
+				<HeadingRow>
+					<Typography variant="h3" component="h1">
+						Welcome to Our Main App
+					</Typography>
+					<Search
+						searchValue={searchValue}
+						handleSearch={handleSearch}
+					/>
+				</HeadingRow>
+				<Box mb={3}>
 					<ActivitiesTable
-						activities={filtered}
+						activities={paginated}
 						sortColumn={sortColumn}
 						onSort={sort => setSortColumn(sort)}
+						onLike={handleLike}
+						totalCount={searched.length}
+						pageSize={pageSize}
+						setPageSize={setPageSize}
+						pageNumber={pageNumber}
+						setPageNumber={setPageNumber}
 					/>
 				</Box>
+				<ButtonRow>
+					<Tooltip title="Fetch new data, it brings no repeated date but is slower">
+						<Button
+							onClick={handleClick}
+							variant="contained"
+							color="primary"
+							startIcon={<AddBoxIcon />}
+						>
+							Add New Page (Slow)
+						</Button>
+					</Tooltip>
+					<Tooltip title="Fetch random data, it is faster but it may fetch repeated activities">
+						<Button
+							onClick={handleRandomClick}
+							variant="contained"
+							color="primary"
+							startIcon={<AddBoxIcon />}
+						>
+							Add Random Page (Fast)
+						</Button>
+					</Tooltip>
+				</ButtonRow>
 			</Container>
+			<LoadingOverlay loading={loading} />
 		</ThemeProvider>
 	);
 }
