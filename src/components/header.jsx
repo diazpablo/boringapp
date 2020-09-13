@@ -1,44 +1,27 @@
-import React, { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography } from "@material-ui/core";
-import MoreVertIcon from "@material-ui/icons/MoreVert";
+import React from 'react';
 import styled from "styled-components";
+import theme from "../assets/theme";
+import { AppBar, Button, Toolbar } from "@material-ui/core";
+import RightMenu from "./rightMenu";
 
 const ToolBarStyled = styled(Toolbar)`
 	justify-content: space-between;
-`
+`;
+const LogoButton = styled(Button)`
+	color: ${theme.palette.common.white};
+`;
 
-const Header = () => {
-	const [ anchorEl, setAnchorEl ] = useState(null);
-	const menuOpen = Boolean(anchorEl);
-
-	const handleClick = (event) => {
-		setAnchorEl(event.currentTarget);
-	};
-
-	const handleClose = () => {
-		setAnchorEl(null);
-	};
-
+const Header = ({ likedActivities, onUnlike }) => {
 	return (
 		<AppBar position="static">
 			<ToolBarStyled variant='dense'>
-				<Typography>
+				<LogoButton size="large">
 					Boring App
-				</Typography>
-				<IconButton
-					color="inherit"
-					onClick={handleClick}
-				>
-					<MoreVertIcon />
-				</IconButton>
-				<Menu
-					anchorEl={anchorEl}
-					open={menuOpen}
-					onClose={handleClose}
-				>
-					<MenuItem onClick={handleClose}>Favourites</MenuItem>
-					<MenuItem onClick={handleClose}>Create Activity</MenuItem>
-				</Menu>
+				</LogoButton>
+				<RightMenu
+					likedActivities={likedActivities}
+					onUnlike={onUnlike}
+				/>
 			</ToolBarStyled>
 		</AppBar>
 	);
