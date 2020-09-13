@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { TableBody, TableCell, TableRow } from "@material-ui/core";
 
 const TableCellStyled = styled(TableCell)`
-	${props => props.styles}
+	${props => props.styles};
 `
 
 const CustomTableBody = ({ data, columns }) => {

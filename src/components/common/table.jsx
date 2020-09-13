@@ -11,7 +11,7 @@ const CommonTable = (props) => {
 
 
 	const getPagination = () => {
-		if (pagination) {
+		if (pagination && pagination.totalCount > pagination.pageSize) {
 			const {
 				pageNumber, pageSize, setPageNumber, setPageSize, totalCount
 			} = pagination;
