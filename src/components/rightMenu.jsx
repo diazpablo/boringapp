@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { connect } from "react-redux";
 import styled from "styled-components";
+import { setDrawerElement } from "../store/app";
+import { getLikedActivities } from "../store/activities";
+import { logoutUser, setLoginDialog, likeActivity } from "../store/auth";
 import Card from "./activityCard";
+import CreateActivity from "./createActivity";
 import { Box, Container, Drawer, IconButton, Menu, MenuItem, Typography } from "@material-ui/core";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import FavoriteIcon from "@material-ui/icons/Favorite";
+import CloseIcon from '@material-ui/icons/Close';
 
 const FavoritesWrapper = styled.div`
 	display: flex;
@@ -13,26 +19,40 @@ const FavoritesWrapper = styled.div`
 		width: calc(33% - 40px)
 	}
 `;
+const DrawerStyled = styled(Drawer)`
+	position: relative;
+`;
+const CloseBtn = styled(IconButton)`
+	position: absolute;
+	right: 50px;
+	top: 30px
+`;
 
-const RightMenu = ({ likedActivities, onUnlike }) => {
-	const [ menuEl, setMenuEl ] = useState(null);
-	const [ drawerOpen, setDrawerOpen ] = useState(false);
-	const [ drawerContent, setDrawerContent ] = useState(null);
-	const menuOpen = Boolean(menuEl);
+const RightMenu = (props) => {
+	const {
+		likedActivities, likeActivity,
+		setLoginDialog, drawerElement, setDrawerElement,
+		user, logoutUser
+	} = props;
 
-	const handleClick = (event) => {
-		setMenuEl(event.currentTarget);
+	const [ menuOpen, setMenuOpen ] = useState(false);
+	const menuRef = useRef();
+
+	const drawerOpen = Boolean(drawerElement);
+
+	const handleClick = () => {
+		setMenuOpen(!menuOpen);
 	};
 
-	const handleClose = () => {
-		setMenuEl(null);
+	const closeMenu = () => {
+		setMenuOpen(false);
 	};
 
 	const cardActions = [
 		{
 			name: 'unlike',
 			content: activity => (
-				<IconButton key={`unlike-${activity.id}`} onClick={() => onUnlike(activity)}>
+				<IconButton key={`unlike-${activity.id}`} onClick={() => likeActivity(activity, false)}>
 					<FavoriteIcon />
 				</IconButton>
 			)
@@ -40,17 +60,16 @@ const RightMenu = ({ likedActivities, onUnlike }) => {
 	];
 
 	const handleOpenDrawer = content => {
-		handleClose();
-		setDrawerContent(content);
-		setDrawerOpen(true);
+		closeMenu();
+		setDrawerElement(content);
 	}
 	const getDrawerContent = () => {
-		switch (drawerContent) {
+		switch (drawerElement) {
 			case "create-activity":
 				return (
 					<>
 						<Typography variant="h4">Create Activity</Typography>
-						<form />
+						<CreateActivity />
 					</>
 				);
 			default:
@@ -64,6 +83,9 @@ const RightMenu = ({ likedActivities, onUnlike }) => {
 		}
 	}
 
+	const closeDrawer = () => {
+		setDrawerElement(null);
+	}
 
 	const showLikedActivities = () => {
 		if (likedActivities.length === 0) {
@@ -83,30 +105,58 @@ const RightMenu = ({ likedActivities, onUnlike }) => {
 				color="inherit"
 				onClick={handleClick}
 			>
-				<MoreVertIcon />
+				<MoreVertIcon ref={menuRef} />
 			</IconButton>
 			<Menu
-				anchorEl={menuEl}
+				anchorEl={menuRef.current}
 				open={menuOpen}
-				onClose={handleClose}
+				onClose={closeMenu}
 			>
-				<MenuItem onClick={() => handleOpenDrawer('favorites')}>Show Favorites</MenuItem>
-				<MenuItem onClick={() => handleOpenDrawer('create-activity')}>Create Activity</MenuItem>
+				{
+					user &&
+					<MenuItem onClick={() => handleOpenDrawer('favorites')}>Show Favorites</MenuItem>}
+				{
+					user && user.isAdmin &&
+					<MenuItem onClick={() => handleOpenDrawer('create-activity')}>Create Activity</MenuItem>}
+
+				{!user ? <MenuItem onClick={() => {
+						closeMenu();
+						setLoginDialog(true);
+					}}>Login</MenuItem> :
+					<MenuItem onClick={() => {
+						closeMenu();
+						logoutUser();
+					}}>Logout</MenuItem>}
+
 			</Menu>
-			<Drawer
+			<DrawerStyled
 				anchor={'right'}
 				open={drawerOpen}
-				onClose={() => {
-					setDrawerOpen(false);
-				}}>
+				onClose={closeDrawer}>
+				<CloseBtn onClick={closeDrawer}>
+					<CloseIcon />
+				</CloseBtn>
 				<Box py={5} width="70vw">
 					<Container>
 						{getDrawerContent()}
 					</Container>
 				</Box>
-			</Drawer>
+			</DrawerStyled>
 		</>
 	);
 };
 
-export default RightMenu;
+const mapStateToProps = (state) => ({
+	likedActivities: getLikedActivities(state),
+	user: state.auth.user,
+	drawerElement: state.app.drawerElement,
+});
+
+const mapDispatchToProps = {
+	logoutUser,
+	setLoginDialog,
+	likeActivity,
+	setDrawerElement
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(RightMenu);

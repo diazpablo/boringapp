@@ -1,15 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { connect } from "react-redux";
 import { ThemeProvider } from '@material-ui/styles';
 import theme from "./assets/theme";
 import styled, { css } from "styled-components";
-import activitiesService from "./services/activitiesService";
+
+import { getUser } from "./store/auth";
+import { getActivities, getRandomActivity } from "./store/activities";
+
 import Header from "./components/header";
 import Search from "./components/search";
 import ActivitiesTable from "./components/activitiesTable";
 import LoadingOverlay from "./components/loadingOverlay";
+import LoginDialog from "./components/loginDialog";
+
 import { Container, Box, Typography, Button, Tooltip } from "@material-ui/core";
 import AddBoxIcon from '@material-ui/icons/AddBox';
-import { order, paginate, search } from "./utils/helpers";
+import PagesIcon from '@material-ui/icons/Pages';
+import ActivityDialog from "./components/activityDialog";
 
 // Styled Components
 const rowStyles = css`
@@ -23,137 +30,98 @@ const HeadingRow = styled.div`
 `;
 const ButtonRow = styled.div`
 	${rowStyles};
-	justify-content: flex-end;
-	> * {
-		margin-left: 10px;
-	}
+	justify-content: space-between;
 `;
 
-// SearchBy Options
-const searchOptions = [
-	{ key: 'activity', label: "Name" },
-];
+const ButtonStyled = styled(Button)`
+	margin-right: 10px;
+`
 
-function App() {
-	// Search State
-	const [ searchValue, setSearchValue ] = useState('');
-	// For future searchin by functionality
-	const [ searchBy ] = useState(searchOptions[0]);
-
-	// Sort State
-	const [ sortColumn, setSortColumn ] = useState({ key: 'activity', order: 'asc' });
-
-	// Entities State
-	const [ activities, setActivities ] = useState([]);
-
-	// Pagination State
-	const [ pageSize, setPageSize ] = useState(10);
-	const [ pageNumber, setPageNumber ] = useState(0);
-
-	// Loading State
-	const [ loading, setLoading ] = useState(false);
+function App(props) {
+	const { getUser, getActivities, getRandomActivity, pageSize, moreBtnActive } = props;
 
 	useEffect(() => {
-		fetchData(true);
-
+		getUser();
+		getActivities(pageSize);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const fetchData = async (random) => {
-		setLoading(true);
-		let newActivities;
-
-		if (random) newActivities = await activitiesService.getRandomActivities(pageSize);
-		else newActivities = await activitiesService.getNewActivites(pageSize, activities);
-
-		setActivities(() => [ ...activities, ...newActivities ]);
-		setLoading(false);
-	}
-
 	// Click Handlers
-	const handleClick = () => fetchData(false);
-	const handleRandomClick = () => fetchData(true);
-
-	const handleSearch = value => {
-		setPageNumber(0);
-		setSearchValue(value);
+	const handleGetNewActivities = () => {
+		const onlyNewActivities = true;
+		getActivities(pageSize, onlyNewActivities);
 	}
-
-	const handleLike = async activity => {
-		const originalActivities = [ ...activities ];
-		const newActivities = [ ...activities ];
-
-		const index = newActivities.indexOf(activity);
-		const newActivity = { ...newActivities[index], liked: !activities[index].liked };
-		newActivities[index] = newActivity;
-		setActivities(newActivities);
-
-		try {
-			await activitiesService.setLikedActivity(newActivity);
-		} catch (err) {
-			// Catching errors on persisting liking or future server update
-			console.error(err);
-			alert("It was a problem, please try later.")
-			setActivities(originalActivities);
-		}
-	}
-
-	const sorted = order(activities, sortColumn.key, sortColumn.order);
-	const searched = search(sorted, searchBy.key, searchValue);
-	const paginated = paginate(searched, pageNumber, pageSize);
+	const handleGetRandomActivities = () => getActivities(pageSize);
+	const handleGetRandomActivity = () => getRandomActivity();
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Header likedActivities={activities.filter(a => a.liked)} onUnlike={handleLike} />
+			<Header />
 			<Container maxWidth="lg">
 				<HeadingRow>
 					<Typography variant="h3" component="h1">
 						Welcome to Our Main App
 					</Typography>
-					<Search
-						searchValue={searchValue}
-						handleSearch={handleSearch}
-					/>
+					<Search />
 				</HeadingRow>
 				<Box mb={3}>
-					<ActivitiesTable
-						activities={paginated}
-						sortColumn={sortColumn}
-						onSort={sort => setSortColumn(sort)}
-						onLike={handleLike}
-						totalCount={searched.length}
-						pageSize={pageSize}
-						setPageSize={setPageSize}
-						pageNumber={pageNumber}
-						setPageNumber={setPageNumber}
-					/>
+					<ActivitiesTable />
 				</Box>
 				<ButtonRow>
-					<Tooltip title="Fetch new data, it brings no repeated date but is slower">
+					<Tooltip title={"This is a fast way to pick an activity to do"}>
 						<Button
-							onClick={handleClick}
+							onClick={handleGetRandomActivity}
 							variant="contained"
 							color="primary"
-							startIcon={<AddBoxIcon />}
+							startIcon={<PagesIcon />}
 						>
-							Add New Page (Slow)
+							GET AN ACTIVITY
 						</Button>
 					</Tooltip>
-					<Tooltip title="Fetch random data, it is faster but it may fetch repeated activities">
-						<Button
-							onClick={handleRandomClick}
-							variant="contained"
-							color="primary"
-							startIcon={<AddBoxIcon />}
-						>
-							Add Random Page (Fast)
-						</Button>
+					<Tooltip title={moreBtnActive ? '' : 'There are no more activities to get.'}>
+						<Box>
+							<Tooltip title={moreBtnActive ? "Fetch new data, it brings no repeated date but is slower" : ""}>
+								<ButtonStyled
+									disabled={!moreBtnActive}
+									onClick={handleGetNewActivities}
+									variant="contained"
+									color="primary"
+									startIcon={<AddBoxIcon />}
+								>
+									Add New Page (Slow)
+								</ButtonStyled>
+							</Tooltip>
+							<Tooltip title={moreBtnActive ? "Fetch random data, it is faster but it may fetch repeated activities" : ""}>
+								<Button
+									disabled={!moreBtnActive}
+									onClick={handleGetRandomActivities}
+									variant="contained"
+									color="primary"
+									startIcon={<AddBoxIcon />}
+								>
+									Add Random Page (Fast)
+								</Button>
+							</Tooltip>
+						</Box>
 					</Tooltip>
 				</ButtonRow>
 			</Container>
-			<LoadingOverlay loading={loading} />
+			<ActivityDialog />
+			<LoginDialog />
+			<LoadingOverlay />
 		</ThemeProvider>
 	);
 }
 
-export default App;
+const mapStateToProps = ({ activities }) => ({
+	pageSize: activities.pageSize,
+	moreBtnActive: activities.list.length < activities.countedActivities
+});
+
+const mapDispatchToProps = {
+	getActivities,
+	getUser,
+	getRandomActivity
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);

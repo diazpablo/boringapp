@@ -1,8 +1,15 @@
 import React from 'react';
+import { connect } from "react-redux";
+import { setSearchValue, setPageNumber } from "../store/activities";
 import { InputAdornment, TextField } from "@material-ui/core";
 import { SearchRounded } from "@material-ui/icons";
 
-const Search = ({ searchValue, handleSearch }) => {
+const Search = ({ searchValue, setSearchValue, setPageNumber }) => {
+	const handleSearch = e => {
+		setSearchValue(e.target.value);
+		setPageNumber(0);
+	};
+
 	return (
 		<TextField
 			label="Search by name" variant="outlined"
@@ -14,9 +21,18 @@ const Search = ({ searchValue, handleSearch }) => {
 				),
 			}}
 			value={searchValue}
-			onChange={e => handleSearch(e.target.value)}
+			onChange={handleSearch}
 		/>
 	);
 };
 
-export default Search;
+const mapStateToProps = ({ activities }) => ({
+	searchValue: activities.searchValue
+});
+
+const mapDispatchToProps = {
+	setSearchValue,
+	setPageNumber
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Search);

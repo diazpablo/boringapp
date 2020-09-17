@@ -11,17 +11,14 @@ const LogoButton = styled(Button)`
 	color: ${theme.palette.common.white};
 `;
 
-const Header = ({ likedActivities, onUnlike }) => {
+const Header = () => {
 	return (
 		<AppBar position="static">
 			<ToolBarStyled variant='dense'>
 				<LogoButton size="large">
 					Boring App
 				</LogoButton>
-				<RightMenu
-					likedActivities={likedActivities}
-					onUnlike={onUnlike}
-				/>
+				<RightMenu />
 			</ToolBarStyled>
 		</AppBar>
 	);

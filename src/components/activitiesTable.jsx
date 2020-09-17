@@ -1,30 +1,35 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { connect } from "react-redux";
+import { likeActivity } from '../store/auth';
+import {
+	setPageNumber, setPageSize, setSortColumn,
+	getPaginatedActivities, getCountedSearchActivities
+} from '../store/activities';
 import Table from "./common/table";
 import Like from "./common/like";
-import styled, { css } from "styled-components";
+import { css } from "styled-components";
 
 const imageCellStyles = css`
 	width: 15%;
-	max-height: 80px;
 	padding: 0;
+	position: relative;
+	> img {
+		display: block;
+		object-fit: cover;
+		object-position: center;
+		width: 100%;
+		height: 100%;
+		max-height: 100px;
+	}
 `;
 const activityCellStyles = css`
 	width: 30%;
 `;
-
-const ActivityImage = styled.img`
-	display: block;
-	object-fit: cover;
-	object-position: center;
-	max-width: 100%;
-	max-height: 100%;
-`
-
 const ActivitiesTable = (props) => {
 	const {
-		activities, sortColumn, onSort, onLike,
-		totalCount, pageNumber, pageSize, setPageNumber, setPageSize
+		user,
+		activities, sortColumn, setSortColumn, likeActivity,
+		totalCount, pageNumber, setPageNumber, pageSize, setPageSize
 	} = props;
 
 	const columns = [
@@ -32,7 +37,7 @@ const ActivitiesTable = (props) => {
 			key: 'imageUrl',
 			contentCellStyles: imageCellStyles,
 			content: activity => (
-				<ActivityImage
+				<img
 					alt={activity.activity}
 					src={activity.imageUrl}
 				/>
@@ -40,11 +45,22 @@ const ActivitiesTable = (props) => {
 		},
 		{ key: 'activity', label: 'Activity name', contentCellStyles: activityCellStyles },
 		{ key: 'accessibility', label: 'Accessibility' },
-		{ key: 'type', label: 'Type' },
+		{ key: 'type.name', label: 'Type' },
 		{ key: 'participants', label: 'Participants' },
-		{ key: 'price', label: 'Price' },
-		{ key: 'like', content: activity => <Like liked={activity.liked} onClick={() => onLike(activity)} /> }
+		{ key: 'price', label: 'Price' }
 	];
+
+	const likeColumn = {
+		key: 'like',
+		content: activity => user ?
+			<Like liked={user.likedActivities && user.likedActivities.indexOf(activity.id) > -1} onClick={() => likeActivity(activity)} /> : null
+	};
+
+	if (user) {
+		columns.push(likeColumn);
+	}
+
+	const onSort = sort => setSortColumn(sort);
 
 	return (
 		<Table
@@ -63,16 +79,20 @@ const ActivitiesTable = (props) => {
 	);
 };
 
-ActivitiesTable.propTypes = {
-	activities: PropTypes.array.isRequired,
-	sortColumn: PropTypes.object.isRequired,
-	onSort: PropTypes.func.isRequired,
-	onLike: PropTypes.func.isRequired,
-	totalCount: PropTypes.number.isRequired,
-	pageNumber: PropTypes.number.isRequired,
-	pageSize: PropTypes.number.isRequired,
-	setPageNumber: PropTypes.func.isRequired,
-	setPageSize: PropTypes.func.isRequired
+const mapStateToProps = ({ activities, auth }) => ({
+	pageNumber: activities.pageNumber,
+	pageSize: activities.pageSize,
+	totalCount: getCountedSearchActivities(activities),
+	sortColumn: activities.sortColumn,
+	activities: getPaginatedActivities(activities),
+	user: auth.user
+})
+
+const mapDispatchToProps = {
+	setPageNumber,
+	setPageSize,
+	setSortColumn,
+	likeActivity
 }
 
-export default ActivitiesTable;
+export default connect(mapStateToProps, mapDispatchToProps)(ActivitiesTable);

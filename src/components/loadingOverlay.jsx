@@ -3,6 +3,7 @@ import styled from "styled-components";
 import theme from "../assets/theme";
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { CircularProgress, Fade } from "@material-ui/core";
+import { connect } from "react-redux";
 
 const Overlay = styled.div`
 	position: fixed;
@@ -13,6 +14,7 @@ const Overlay = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	z-index: 1400;
 `
 
 const LoadingOverlay = ({ loading }) => {
@@ -25,4 +27,8 @@ const LoadingOverlay = ({ loading }) => {
 	);
 };
 
-export default LoadingOverlay;
+const mapStateToProps = ({ activities, auth, app }) => ({
+	loading: app.loading || activities.loading || auth.loading
+})
+
+export default connect(mapStateToProps)(LoadingOverlay);
