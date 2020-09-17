@@ -6,7 +6,10 @@ The App expects an environment file with REACT_APP_API_URL with the API Url. You
 
 You can find a working testing environment on:
 
-https://boring-app.netlify.app/
+<a href="https://boring-app.netlify.app/" target="_blank">
+See Demo
+</a>
+
 
 ## Available Scripts
 

@@ -8,7 +8,7 @@ const CardStyled = styled(Card)`
 	flex-direction: column;
 `;
 const CardMediaStyled = styled(CardMedia)`
-	height: 100px;
+	height: 150px;
 `;
 const CardActionsStyled = styled(CardActions)`
 	margin-top: auto;
@@ -25,9 +25,12 @@ const ActivityCard = ({ activity, actions }) => {
 				<Typography gutterBottom variant="h5" component="h2">
 					{activity.activity}
 				</Typography>
-				<Typography variant="body2" color="textSecondary" component="h3">
-					{activity.type}
+				<Typography color="textSecondary" variant="subtitle1" component="h6">
+					{activity.type.name}
 				</Typography>
+				<Typography variant="body2" color="textSecondary">Price: {activity.price}</Typography>
+				<Typography variant="body2" color="textSecondary">Accesibility: {activity.accessibility}</Typography>
+				<Typography variant="body2" color="textSecondary">Participants: {activity.participants}</Typography>
 			</CardContent>
 			{actions.length > 0 && (
 				<CardActionsStyled disableSpacing>
