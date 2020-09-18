@@ -23,18 +23,32 @@ const rowStyles = css`
 	display: flex;
 	align-items: center;
 	margin: 40px 0;
+	@media (max-width: 767px){
+		flex-direction: column;
+	}
 `;
 const HeadingRow = styled.div`
 	${rowStyles};
 	justify-content: space-between;
+	@media (max-width: 767px){
+		>*{
+			margin: 10px 0;
+			width: 100%;
+		}
+	}
 `;
 const ButtonRow = styled.div`
 	${rowStyles};
 	justify-content: space-between;
 `;
-
+const AddPageBox = styled(Box)`
+	@media (max-width: 767px){
+		display: flex;
+		flex-direction: column;
+	}
+`;
 const ButtonStyled = styled(Button)`
-	margin-right: 10px;
+	margin: 10px;
 `
 
 function App(props) {
@@ -79,7 +93,7 @@ function App(props) {
 						</Button>
 					</Tooltip>
 					<Tooltip title={moreBtnActive ? '' : 'There are no more activities to get.'}>
-						<Box>
+						<AddPageBox>
 							<Tooltip title={moreBtnActive ? "Fetch new data, it brings no repeated date but is slower" : ""}>
 								<ButtonStyled
 									disabled={!moreBtnActive}
@@ -102,7 +116,7 @@ function App(props) {
 									Add Random Page (Fast)
 								</Button>
 							</Tooltip>
-						</Box>
+						</AddPageBox>
 					</Tooltip>
 				</ButtonRow>
 			</Container>

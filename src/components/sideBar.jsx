@@ -15,16 +15,29 @@ const FavoritesWrapper = styled.div`
 	flex-wrap: wrap;
 	> * {
 		margin: 20px;
-		width: calc(33% - 40px)
+		width: calc(33% - 40px);
+		@media (max-width: 767px) {
+			width: 100%;
+		}
 	}
 `;
 const DrawerStyled = styled(Drawer)`
 	position: relative;
 `;
+const Content = styled(Box)`
+	width: 70vw;
+	@media (max-width: 767px) {
+		width: 100vw;
+	}
+`;
 const CloseBtn = styled(IconButton)`
 	position: absolute;
 	right: 50px;
-	top: 30px
+	top: 30px;
+	@media (max-width: 767px) {
+		right: 10px;
+		top: 10px;
+	}
 `;
 
 const SideBar = ({ drawerElement, likedActivities, setDrawerElement, likeActivity }) => {
@@ -90,11 +103,11 @@ const SideBar = ({ drawerElement, likedActivities, setDrawerElement, likeActivit
 			<CloseBtn onClick={closeDrawer}>
 				<CloseIcon />
 			</CloseBtn>
-			<Box py={5} width="70vw">
+			<Content py={5}>
 				<Container>
 					{getDrawerContent()}
 				</Container>
-			</Box>
+			</Content>
 		</DrawerStyled>
 	);
 };
