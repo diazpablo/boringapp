@@ -6,6 +6,7 @@ const slice = createSlice({
 	name: 'auth',
 	initialState: {
 		loginDialog: false,
+		loginError: null,
 		loading: false,
 		user: null,
 	},
@@ -15,13 +16,15 @@ const slice = createSlice({
 		},
 		userLoginInit: auth => {
 			auth.loading = true;
+			auth.loginError = null;
 		},
 		userLogged: (auth, action) => {
 			auth.loading = false;
 			auth.user = action.payload.user;
 		},
-		userLoginFailed: auth => {
+		userLoginFailed: (auth, action) => {
 			auth.loading = false;
+			auth.loginError = action.payload.error;
 		},
 		userLoggedOut: auth => {
 			auth.user = null;
@@ -73,9 +76,13 @@ export const loginUser = (email, password) => async (dispatch) => {
 		const user = jwtDecode(jwt);
 		dispatch(userLogged({ user }));
 		window.location.reload();
-	} catch (e) {
-		console.error(e.message);
-		dispatch(userLoginFailed({}));
+	} catch (ex) {
+		let error = null;
+		if (ex.response && ex.response.status)
+			error = "Invalid mail or password."
+		else
+			console.error(ex.message);
+		dispatch(userLoginFailed({ error }));
 	}
 }
 
