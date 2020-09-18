@@ -4,10 +4,10 @@ import IconButton from '@material-ui/core/IconButton';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder';
 
-const Like = ({ liked = false, onClick }) => {
+const Like = ({ liked = false, ...rest }) => {
 	return (
 		<IconButton
-			onClick={onClick}
+			{...rest}
 		>
 			{liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
 		</IconButton>
@@ -15,8 +15,7 @@ const Like = ({ liked = false, onClick }) => {
 };
 
 Like.propTypes = {
-	liked: PropTypes.bool,
-	onClick: PropTypes.func
+	liked: PropTypes.bool
 }
 
 export default Like;
