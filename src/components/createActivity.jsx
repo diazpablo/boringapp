@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { connect } from "react-redux";
 import Joi from "joi-browser";
+import styled from "styled-components";
 import { setDrawerElement } from "../store/app";
 import { getTypes, createActivity } from "../store/activities";
-import styled from "styled-components";
 import { TextField, FormControl, FormHelperText, InputLabel, Select, Button } from "@material-ui/core";
 import { DropzoneArea } from 'material-ui-dropzone'
 import SaveIcon from "@material-ui/icons/Save";
@@ -52,13 +52,54 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 			})),
 	}
 
+	const validateImageSizeRatio = file => {
+		setErrors(errors => {
+			delete errors.image;
+			return errors;
+		});
+		const fr = new FileReader();
+		fr.onload = e => {
+			const image = new Image();
+			image.src = e.target.result;
+
+			image.onload = function () {
+				const imageRatio = this.width / this.height;
+				if (imageRatio !== 16 / 9) {
+					setErrors(errors => ({ ...errors, image: 'Image\'s aspect ratio must be 16:9.' }));
+				} else {
+					setImage(file)
+				}
+			};
+		};
+		fr.readAsDataURL(file);
+	}
+
 	const handleValidateFile = files => {
-		setImage(files[0]);
+		if (files.length) {
+			const [ file ] = files;
+
+			validateImageSizeRatio(file);
+		}
 	};
+
+	const handleValidateInput = e => {
+		const { name, value } = e.target;
+
+		setErrors(errors => {
+			delete errors[name];
+			return errors;
+		});
+		const { error } = Joi.validate(value, schema[name]);
+
+		if (error) {
+			setErrors(errors => ({ ...errors, [name]: error.details[0].message }));
+			return;
+		}
+	}
 
 	const handleSubmit = async e => {
 		e.preventDefault();
-		setErrors([]);
+		setErrors({});
 
 		const formData = new FormData();
 		formData.append("activity", name);
@@ -68,13 +109,6 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 		formData.append("typeId", type);
 		formData.append("image", image);
 
-		for (const entry of formData.entries()) {
-			const [ key, value ] = entry;
-			const { error } = Joi.validate(value, schema[key]);
-			if (error) {
-				setErrors(errors => ({ ...errors, [key]: error.details[0].message }));
-			}
-		}
 		try {
 			await createActivity(formData);
 			setDrawerElement(null);
@@ -82,6 +116,13 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 			console.error(e.message);
 		}
 	}
+
+	const formObject = {
+		activity: name, accessibility, typeId: type, price, participants, image
+	};
+
+	const { error: validateErrors } = Joi.validate(formObject, schema);
+	const formIsValid = !validateErrors && Object.keys(errors).length === 0;
 
 	const getParticipantsOptions = () => {
 		const options = Array.from({ length: 100 })
@@ -95,14 +136,16 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 				<TextFieldStyled
 					error={!!errors['activity']}
 					helperText={errors['activity']}
-					label="Name" variant="outlined"
+					label="Name" variant="outlined" name="activity"
 					value={name}
 					onChange={e => setName(e.target.value)}
+					onBlur={handleValidateInput}
 				/>
 				<TextFieldStyled
 					error={!!errors['accessibility']}
 					helperText={errors['accessibility']}
 					label="Accesibility" variant="outlined"
+					name="accessibility"
 					type="number"
 					inputProps={{
 						min: 0,
@@ -111,11 +154,13 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 					}}
 					value={accessibility}
 					onChange={e => setAccessibility(e.target.value)}
+					onBlur={handleValidateInput}
 				/>
 				<TextFieldStyled
 					label="Price" variant="outlined"
 					helperText={errors['price']}
 					error={!!errors['price']}
+					name="price"
 					type="number"
 					inputProps={{
 						min: 0,
@@ -124,6 +169,7 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 					}}
 					value={price}
 					onChange={e => setPrice(e.target.value)}
+					onBlur={handleValidateInput}
 				/>
 				<FormControlStyled
 					error={!!errors['participants']}
@@ -139,6 +185,7 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 						}}
 						value={participants}
 						onChange={e => setParticipants(e.target.value)}
+						onBlur={handleValidateInput}
 					>
 						<option aria-label="None" value="" />
 						{getParticipantsOptions()}
@@ -160,6 +207,7 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 						}}
 						value={type}
 						onChange={e => setType(e.target.value)}
+						onBlur={handleValidateInput}
 					>
 						<option aria-label="None" value="" />
 						{types.map(type => (
@@ -173,7 +221,6 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 				>
 					<DropzoneArea
 						filesLimit={1}
-						maxFileSize={10000000}
 						acceptedFiles={[ 'image/*' ]}
 						onChange={handleValidateFile}
 					/>
@@ -181,6 +228,7 @@ const CreateActivity = ({ getTypes, types, createActivity, setDrawerElement }) =
 				</FormControlStyled>
 				<FormControlStyled>
 					<Button
+						disabled={!formIsValid}
 						type="submit"
 						size="large"
 						variant="contained"
